@@ -19,7 +19,9 @@
     </el-header>
     <el-container>
       <!-- 左侧菜单 -->
-      <el-aside width="200px" style="background:blue;">Aside</el-aside>
+      <el-aside width="auto">
+        <menu-bar></menu-bar>
+      </el-aside>
       <!-- 右侧内容显示区 -->
       <el-container style="background:#B15BFF">
         <el-main style="background:#FFF;">Main</el-main>
@@ -30,10 +32,12 @@
 
 <script>
 // @ is an alias to /src
-
+import MenuBar from '../components/MenuBar.vue'
 export default {
   name: "Home",
-  components: {}
+  components: {
+    MenuBar
+  }
 };
 </script>
 <style lang="css" scope>

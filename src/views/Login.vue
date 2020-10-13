@@ -142,4 +142,5 @@ export default {
 .my-button {
   width: 100%;
 }
+
 </style>
