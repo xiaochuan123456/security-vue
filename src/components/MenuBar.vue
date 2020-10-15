@@ -1,6 +1,6 @@
 <template>
   <el-menu
-    default-active="1-4-1"
+    :default-active="$route.path"
     class="menu-bar"
     @open="handleOpen"
     @close="handleClose"
@@ -19,6 +19,7 @@ export default {
   },
   data() {
     return {
+      isCollapse: false,
       menuList: [
         {
           children: [
@@ -212,6 +213,6 @@ export default {
   border-right: none;
 }
 .el-aside {
-  border-right: 1px solid #e6e6e6;
+  border-right: 2px solid #e6e6e6;
 }
 </style>

@@ -8,7 +8,30 @@ const routes = [
   {
     path: "/",
     name: "Home",
-    component: Home
+    component: Home,
+    children: [
+      {
+        path: '/departmentList',
+        name: 'departmentList',
+        component: () => import("../views/system/Department/DepartmentList.vue")
+      },
+      {
+        path: '/userList',
+        name: 'userList',
+        component: () => import('@/views/system/User/UserList.vue')
+      },
+      {
+        path: '/roleList',
+        name: 'roleList',
+        component: () => import('@/views/system/Role/RoleList.vue')
+      },
+      {
+        path: '/menuList',
+        name: 'menuList',
+        component: () => import('@/views/system/Menu/MenuList.vue')
+      }
+    ]
+
   },
   {
     path: "/login",

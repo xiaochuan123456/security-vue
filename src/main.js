@@ -22,6 +22,16 @@ axios.interceptors.request.use(config => {
   return config;
 });
 
+//进入路由之前进行
+router.beforeEach((to,from,next) => {
+	//to 即将进入的路由
+	//from  即将离开的路由
+    //获取当前打开的选项卡
+    store.commit('getTabs');
+    //设置当前激活的选项卡
+    store.commit('setActiveTabs',to.name);
+    next(); //继续往下执行
+})
 Vue.config.productionTip = false;
 
 new Vue({

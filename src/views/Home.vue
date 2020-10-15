@@ -23,8 +23,11 @@
         <menu-bar></menu-bar>
       </el-aside>
       <!-- 右侧内容显示区 -->
-      <el-container style="background:#B15BFF">
-        <el-main style="background:#FFF;">Main</el-main>
+      <el-container>
+        <el-main style="padding:0;" >
+          <tabs></tabs>
+          <router-view></router-view>
+        </el-main>
       </el-container>
     </el-container>
   </el-container>
@@ -33,10 +36,12 @@
 <script>
 // @ is an alias to /src
 import MenuBar from '../components/MenuBar.vue'
+import tabs from '../components/tabs.vue'
 export default {
   name: "Home",
   components: {
-    MenuBar
+    MenuBar,
+    tabs
   }
 };
 </script>

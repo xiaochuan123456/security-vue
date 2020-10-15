@@ -8,7 +8,7 @@
     </template>
     <menu-item :menuList="menu.children"></menu-item> 
    </el-submenu>
-   <el-menu-item v-else :index="menu.path" :key="menu.path">
+   <el-menu-item @click="selectMenu(menu)" v-else :index="menu.path" :key="menu.path">
      <i :class="menu.icon"></i>
       <span slot="title">{{menu.label}}</span>
    </el-menu-item>
@@ -23,6 +23,14 @@ export default {
   props: ['menuList'],
   components:{
       MenuItem
+  },
+  methods:{ 
+    selectMenu(item){
+      //设置选项卡
+      this.$store.commit('selectMenu', item)
+      //设置路由
+      this.$router.push({name: item.name});
+    }
   }
 };
 </script>
