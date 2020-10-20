@@ -72,4 +72,7 @@ export default {
 .header-time {
   font-size: 14px;
 }
+.el-aside {
+  border-right: 1px solid #e6e6e6;
+}
 </style>

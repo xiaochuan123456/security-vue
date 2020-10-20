@@ -28,7 +28,7 @@ export default {
     selectMenu(item){
       //设置选项卡
       this.$store.commit('selectMenu', item)
-      //设置路由
+      //设置当前跳转的路由
       this.$router.push({name: item.name});
     }
   }
