@@ -36,8 +36,8 @@ axios.interceptors.response.use(
     if (response.status === 200) {
       //600token过期或者token认证失败
       if (response.data.code == 600) {
-        sessionStorage.clear();
-        window.location.href = '/login';
+        // sessionStorage.clear();
+        // window.location.href = '/login';
         return response;
       } else {
         return Promise.resolve(response);
@@ -47,52 +47,66 @@ axios.interceptors.response.use(
       return Promise.reject(response);
     }
   },
+  // error => {
+  //   if (error.response.status) {
+  //     switch (error.response.status) {
+  //       // 401: 未登录
+  //       // 未登录则跳转登录页面，并携带当前页面的路径
+  //       // 在登录成功后返回当前页面，这一步需要在登录页操作。                
+  //       case 401:
+  //         router.replace({
+  //           path: '/login',
+  //           query: {
+  //             redirect: router.currentRoute.fullPath
+  //           }
+  //         });
+  //         break;
+
+  //       // 600 token过期
+  //       // 登录过期对用户进行提示
+  //       // 清除本地token和清空vuex中token对象
+  //       // 跳转登录页面                
+  //       case 405:
+  //         ElementUI.Message({
+  //           message: '请求方式错误',
+  //           type: 'error'
+  //         });
+  //         break;
+  //       // 404请求不存在
+  //       case 404:
+  //         ElementUI.Message({
+  //           message: '网络请求不存在',
+  //           type: 'error'
+  //         });
+  //         break;
+  //       // 其他错误，直接抛出错误提示
+  //       default:
+  //         ElementUI.Message({
+  //           message: error.response.data.msg,
+  //           type: 'error'
+  //         });
+  //       if (error.response.data.code == 600) {
+  //         sessionStorage.clear();
+  //         window.location.href = '/login';
+  //       }
+  //     }
+  //     return Promise.reject(error.response);
+  //   }
+  // }
   error => {
     if (error.response.status) {
-      switch (error.response.status) {
-        // 401: 未登录
-        // 未登录则跳转登录页面，并携带当前页面的路径
-        // 在登录成功后返回当前页面，这一步需要在登录页操作。                
-        case 401:
-          router.replace({
-            path: '/login',
-            query: {
-              redirect: router.currentRoute.fullPath
-            }
-          });
-          break;
-
-        // 600 token过期
-        // 登录过期对用户进行提示
-        // 清除本地token和清空vuex中token对象
-        // 跳转登录页面                
-        case 405:
-          ElementUI.Message({
-            message: '请求方式错误',
-            type: 'error'
-          });
-          break;
-        // 404请求不存在
-        case 404:
-          ElementUI.Message({
-            message: '网络请求不存在',
-            type: 'error'
-          });
-          break;
-        // 其他错误，直接抛出错误提示
-        default:
-          ElementUI.Message({
-            message: error.response.data.msg,
-            type: 'error'
-          });
-          if (error.response.data.code == 600) {
-            sessionStorage.clear();
-            window.location.href = '/login';
-          }
+      ElementUI.Message({
+        message: error.response.data.msg,
+        type: 'error'
+      })
+      if (error.response.data.code == 600) {
+        // sessionStorage.clear();
+        // window.location.href = "/login";
       }
       return Promise.reject(error.response);
     }
   }
+
 );
 
 //进入路由之前进行
@@ -106,17 +120,17 @@ router.beforeEach((to, from, next) => {
   //设置当前激活的选项卡
   store.commit('setActiveTabs', to.name);
 
-  //let menuData = sessionStorage.getItem('token');
-  let menuData = sessionStorage.getItem('menuList');
+  let token = sessionStorage.getItem('token');
+  //let menuData = sessionStorage.getItem('menuList');
   if (to.path === '/login') {
-    if (menuData) {
+    if (token) {
       next({ path: '/home' })
     } else {
       next()
     }
   } else {
     //如果不从登录页来的
-    if (!menuData && to.name !== 'login') {
+    if (!token && to.name !== 'login') {
       next({ path: 'login' })
     } else {
       //如果store中的菜单数据menu_data被刷新了，那么重新加载

@@ -11,7 +11,7 @@
             ></el-input>
           </el-form-item>
         </el-col>
-        <el-button class="btn-left" type="primary" icon="el-icon-search"
+        <el-button @click="searchRole()" class="btn-left" type="primary" icon="el-icon-search"
           >查询</el-button
         >
         <el-button type="primary" @click="addRole()" icon="el-icon-plus"
@@ -26,10 +26,9 @@
      height  表格高度,只要在el-table元素中定义了height属性，即可实现固定表头的表格
      prop:需要与表格数据对应
     -->
-    <el-table :data="tableData" height="250" border style="width: 100%">
-      <el-table-column prop="date" label="日期" width="180"> </el-table-column>
-      <el-table-column prop="name" label="姓名" width="180"> </el-table-column>
-      <el-table-column prop="address" label="地址"> </el-table-column>
+    <el-table :data="roleList" height="250" border style="width: 100%">
+      <el-table-column prop="name" label="角色名称" width="180"> </el-table-column>
+      <el-table-column prop="remark" label="备注" width="180"> </el-table-column>
       <el-table-column label="操作" width="250" align="center">
         <template slot-scope="scope">
           <el-button @clickt="editRole(scope.row)" type="primary" size="mini"
@@ -48,10 +47,10 @@
     <el-pagination
       @size-change="handleSizeChange"
       @current-change="handleCurrentChange"
-      :current-page.sync="currentPage1"
-      :page-size="100"
+      :current-page.sync="currentPage"
+      :page-size="pagesize"
       layout="total, prev, pager, next"
-      :total="1000"
+      :total="total"
     >
     </el-pagination>
     <!--新增角色弹框-->
@@ -61,7 +60,7 @@
       width="30%"
       :before-close="handleClose"
     >
-      <el-form ref="addRole1" :model="addRoleForm" inline>
+      <el-form ref="addRole" :model="addRoleForm" inline>
         <el-form-item prop="name" label="角色名称">
           <el-input
             v-model="addRoleForm.name"
@@ -108,9 +107,14 @@ export default {
   components: {
     tree
   },
+  created(){
+    //查询角色列表
+    this.getRoleList();
+  },
   data() {
     return {
-      treedatas:[],
+      editTag:"0",
+      treedatas: [],
       //ztree对象
       ztreeObj: null,
       //ztree配置，参照官网的配置
@@ -141,6 +145,7 @@ export default {
       //控制分配权限弹框显示和隐藏
       autnDialogVisible: false,
       addRoleForm: {
+        id:"",
         name: "",
         remark: ""
       },
@@ -150,6 +155,8 @@ export default {
       //当前页
       currentPage: 1,
       pageSize: 10,
+      //总条数
+      total: 0,
       roleForm: {
         roleName: ""
       },
@@ -169,54 +176,68 @@ export default {
           }
         ]
       },
-      tableData: [
-        {
-          date: "2016-05-03",
-          name: "王小虎",
-          address: "上海市普陀区金沙江路 1518 弄"
-        },
-        {
-          date: "2016-05-02",
-          name: "王小虎",
-          address: "上海市普陀区金沙江路 1518 弄"
-        },
-        {
-          date: "2016-05-04",
-          name: "王小虎",
-          address: "上海市普陀区金沙江路 1518 弄"
-        },
-        {
-          date: "2016-05-01",
-          name: "王小虎",
-          address: "上海市普陀区金沙江路 1518 弄"
-        },
-        {
-          date: "2016-05-08",
-          name: "王小虎",
-          address: "上海市普陀区金沙江路 1518 弄"
-        },
-        {
-          date: "2016-05-06",
-          name: "王小虎",
-          address: "上海市普陀区金沙江路 1518 弄"
-        },
-        {
-          date: "2016-05-07",
-          name: "王小虎",
-          address: "上海市普陀区金沙江路 1518 弄"
-        }
+      roleList: [
+        // {
+        //   date: "2016-05-03",
+        //   name: "王小虎",
+        //   address: "上海市普陀区金沙江路 1518 弄"
+        // },
+        // {
+        //   date: "2016-05-02",
+        //   name: "王小虎",
+        //   address: "上海市普陀区金沙江路 1518 弄"
+        // },
+        // {
+        //   date: "2016-05-04",
+        //   name: "王小虎",
+        //   address: "上海市普陀区金沙江路 1518 弄"
+        // },
+        // {
+        //   date: "2016-05-01",
+        //   name: "王小虎",
+        //   address: "上海市普陀区金沙江路 1518 弄"
+        // },
+        // {
+        //   date: "2016-05-08",
+        //   name: "王小虎",
+        //   address: "上海市普陀区金沙江路 1518 弄"
+        // },
+        // {
+        //   date: "2016-05-06",
+        //   name: "王小虎",
+        //   address: "上海市普陀区金沙江路 1518 弄"
+        // },
+        // {
+        //   date: "2016-05-07",
+        //   name: "王小虎",
+        //   address: "上海市普陀区金沙江路 1518 弄"
+        // }
       ]
     };
   },
   methods: {
-    //
+    //查询角色列表
+    async getRoleList() {
+      let parm = {
+        currentPage: this.currentPage,
+        pageSize: this.pageSize,
+        title: this.roleForm.roleName
+      };
+      let { data: res } = await this.$http.post("/api/role/getRoleList", parm);
+      if (res.code == 200) {
+        this.currentPage = res.data.current;
+        this.pageSize = res.data.size;
+        this.roleList = res.data.records;
+        this.total = res.data.total;
+      }
+    },
     ztreeOnCheck() {
       let checked = this.ztreeObj.getCheckedNodes(true);
       this.checkPermissions = checked;
       console.log(checked);
     },
     //树创建时
-     handleCreated: function(ztreeObj) {
+    handleCreated: function(ztreeObj) {
       console.log("加载树完成");
       this.ztreeObj = ztreeObj;
 
@@ -230,19 +251,84 @@ export default {
     },
     //确认新增或编辑
     confirmBtn() {
-      this.$refs.addRole.validate(valid => {
+      let _this = this;
+      _this.$refs.addRole.validate(async valid => {
         if (valid) {
+          let url = "";
+          if (_this.editTag == "0"){
+           url = "/api/role/addRole";
+          }else{
+            url = "/api/role/updateById";
+          }
+          let {data:res} = await _this.$http.post(url, _this.addRoleForm);
+          if(res.code == 200){
+            //信息提示
+            _this.$message({
+              message:res.msg,
+              type:'success'
+            })
+            //刷新数据
+            _this.getRoleList();
           this.dialogVisible = false;
+          }else{
+            _this.$message({
+              message:res.msg,
+              type:'error'
+            })
+          
+          }
         }
       });
     },
     //删除按钮
     deleteRole(row) {
-      console.log(row)
+      let _this = this;
+      this.$confirm("确认删除吗？","系统提示",{
+        confirmButtonText:'确定',
+        cancelButtonText:'取消',
+        type:'waring'
+      }).then(async () =>{
+        let parm = {
+          id:row.id
+        }
+        let {data:res} = await _this.$http.post("/api/role/deleteRole",parm);
+        if(res.code == 200){
+          _this.getRoleList();
+          _this.$message({
+          message:res.msg,
+          type:'success'
+        })
+        }else{
+        _this.$message({
+          message:res.msg,
+          type:'error'
+        })
+        }
+      })
     },
     //编辑按钮
     editRole(row) {
-      console.log(row)
+      this.editTag = "1";
+      this.resetForm("addRole");
+      this.dialogTitle = "编辑角色";
+      this.dialogVisible = true;
+      //查询编辑的数据
+      this.getRoleById(row.id);
+    },
+    //根据id查询编辑角色的数据
+    async getRoleById(id){
+      let parm = {
+        id:id
+      }
+      let {data:res} = await this.$http.post("/api/role/getRoleById",parm);
+      if(res.code == 200){
+        this.addRoleForm.if = res.data.id;
+        this.addRoleForm.name = res.data.name;
+        this.addRoleForm.remark = res.data.remark;
+      }
+    },
+    searchRole() {
+      this.getRoleList();
     },
     //分配角色权限按钮
     assinRole(row) {
@@ -456,15 +542,17 @@ export default {
       ];
     },
     //改变每页大小
-    handleSizeChange(val) {
-      console.log(`每页 ${val} 条`);
+    handleSizeChange() {
+      this.getRoleList();
     },
     //改变当前页
-    handleCurrentChange(val) {
-      console.log(`当前页: ${val}`);
+    handleCurrentChange() {
+      this.getRoleList();
     },
     addRole() {
+      
       this.resetForm("addRoleForm");
+
       this.dialogVisible = true;
       this.dialogTitle = "新增";
     },
