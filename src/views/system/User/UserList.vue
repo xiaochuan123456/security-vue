@@ -19,7 +19,7 @@
         <el-row>
           <el-col :span="5">
             <el-form-item label="用户名">
-              <el-input v-model="searchForm.deptName"></el-input>
+              <el-input v-model="searchForm.userName"></el-input>
             </el-form-item>
           </el-col>
           <el-col :span="5">
@@ -29,7 +29,7 @@
           </el-col>
            <el-col :span="5">
             <el-form-item label="邮箱">
-              <el-input v-model="searchForm.deptPhone"></el-input>
+              <el-input v-model="searchForm.deptEmail"></el-input>
             </el-form-item>
           </el-col>
           <el-button
@@ -55,9 +55,9 @@
         border
         style="width: 100%"
       >
-        <el-table-column prop="date" label="日期"></el-table-column>
-        <el-table-column prop="name" label="姓名"></el-table-column>
-        <el-table-column prop="address" label="地址"></el-table-column>
+        <el-table-column prop="username" label="姓名"></el-table-column>
+        <el-table-column prop="email" label="邮箱"></el-table-column>
+        <el-table-column prop="mobile" label="电话"></el-table-column>
         <el-table-column label="操作" width="250" align="center">
           <template slot-scope="scope">
             <el-button @click="editUser(scope.row)" type="primary" size="mini"
@@ -78,9 +78,9 @@
         @size-change="handleSizeChange"
         @current-change="handleCurrentChange"
         :current-page.sync="currentPage"
-        :page-size="10"
+        :page-size="pageSize"
         layout="total, prev, pager, next"
-        :total="100"
+        :total="total"
       ></el-pagination>
       <!--新增用户弹框-->
       <el-dialog
@@ -89,31 +89,31 @@
         width="35%"
       >
         <el-form inline size="mini" :model="userForm" ref="userForm" label-width="80px">
-          <el-form-item label="部门">
+          <el-form-item prop="deptName" label="部门名称">
           <el-input @click.native="selectDept" v-model="userForm.deptName"></el-input>
         </el-form-item>
-        <el-form-item label="姓名">
-          <el-input v-model="userForm.loginname"></el-input>
+        <el-form-item prop="loginName" label="姓名">
+          <el-input v-model="userForm.loginName"></el-input>
         </el-form-item>
-        <el-form-item label="性别">
+        <el-form-item prop="sex" label="性别">
           <el-radio-group v-model="userForm.sex">
             <el-radio :label="0">男</el-radio>
             <el-radio :label="1">女</el-radio>
           </el-radio-group>
         </el-form-item>
-        <el-form-item label="电话">
-          <el-input v-model="userForm.phone"></el-input>
+        <el-form-item prop="mobile" label="电话">
+          <el-input v-model="userForm.mobile"></el-input>
         </el-form-item>
-        <el-form-item label="登录名">
+        <el-form-item prop="username" label="登录名">
           <el-input v-model="userForm.username"></el-input>
         </el-form-item>
-        <el-form-item label="密码">
+        <el-form-item prop="password" v-if="edieTag == '0'" label="密码">
           <el-input v-model="userForm.password"></el-input>
         </el-form-item>
         </el-form>
         <span slot="footer" class="dialog-footer">
           <el-button @click="dialogVisible = false">取 消</el-button>
-          <el-button type="primary">确 定</el-button>
+          <el-button type="primary" @click="submitUser()">确 定</el-button>
         </span>
       </el-dialog>
       <!--用户所属部门弹框-->
@@ -170,6 +170,10 @@ export default {
   components: {
     tree
   },
+  created(){
+    //加载左侧部门树
+    this.getLeftTree();
+  },
   //计算表格高度
   mounted() {
     this.$nextTick(() => {
@@ -178,6 +182,9 @@ export default {
   },
   data() {
     return {
+      //左侧部门树id
+      leftDeptId:"",
+      editTag:"0",
       //分配角色弹框显示或隐藏
       roleDialogVisible: false,
       //角色列表数据
@@ -189,6 +196,8 @@ export default {
       dialogVisible: false,
       //当前页
       currentPage: 1,
+      pageSize: 10,
+      total: 0,
       //用户所属部门树对象
       parentZtreeObj: null,
       //用户所属部门树数据
@@ -221,7 +230,8 @@ export default {
       userForm: {
         username: "",
         sex: "",
-        phone: "",
+        email:"",
+        mobile:"",
         loginName: "",
         password: "",
         deptId: "",
@@ -262,98 +272,54 @@ export default {
       //搜索数据
       searchForm: {
         userName: "",
-        userPhone: ""
+        userPhone: "",
+        userEmail: ""
       },
-      tableData: [
-        {
-          date: "2016-05-03",
-          name: "王小虎",
-          address: "上海市普陀区金沙江路 1518 弄"
-        },
-        {
-          date: "2016-05-02",
-          name: "王小虎",
-          address: "上海市普陀区金沙江路 1518 弄"
-        },
-        {
-          date: "2016-05-04",
-          name: "王小虎",
-          address: "上海市普陀区金沙江路 1518 弄"
-        },
-        {
-          date: "2016-05-01",
-          name: "王小虎",
-          address: "上海市普陀区金沙江路 1518 弄"
-        },
-        {
-          date: "2016-05-08",
-          name: "王小虎",
-          address: "上海市普陀区金沙江路 1518 弄"
-        },
-        {
-          date: "2016-05-06",
-          name: "王小虎",
-          address: "上海市普陀区金沙江路 1518 弄"
-        },
-        {
-          date: "2016-05-07",
-          name: "王小虎",
-          address: "上海市普陀区金沙江路 1518 弄"
-        },
-        {
-          date: "2016-05-03",
-          name: "王小虎",
-          address: "上海市普陀区金沙江路 1518 弄"
-        },
-        {
-          date: "2016-05-02",
-          name: "王小虎",
-          address: "上海市普陀区金沙江路 1518 弄"
-        },
-        {
-          date: "2016-05-04",
-          name: "王小虎",
-          address: "上海市普陀区金沙江路 1518 弄"
-        },
-        {
-          date: "2016-05-01",
-          name: "王小虎",
-          address: "上海市普陀区金沙江路 1518 弄"
-        },
-        {
-          date: "2016-05-08",
-          name: "王小虎",
-          address: "上海市普陀区金沙江路 1518 弄"
-        },
-        {
-          date: "2016-05-06",
-          name: "王小虎",
-          address: "上海市普陀区金沙江路 1518 弄"
-        },
-        {
-          date: "2016-05-07",
-          name: "王小虎",
-          address: "上海市普陀区金沙江路 1518 弄"
-        },
-        {
-          date: "2016-05-08",
-          name: "王小虎",
-          address: "上海市普陀区金沙江路 1518 弄"
-        },
-        {
-          date: "2016-05-06",
-          name: "王小虎",
-          address: "上海市普陀区金沙江路 1518 弄"
-        },
-        {
-          date: "2016-05-07",
-          name: "王小虎",
-          address: "上海市普陀区金沙江路 1518 弄"
-        }
-      ]
+      tableData: []
     };
   },
   methods: {
+    submitUser(){
+       let _this = this;
+      //1.验证表单
+      _this.$refs.userForm.validate(async valid => {
+        if (valid) {
+          let url = "";
+          if (_this.editTag == "0") {
+            url = "/api/user/addUser";
+          } else {
+            url = "/api/user/updateSaveUser";
+          }
+          let parm = _this.userForm;
+          let { data: res } = await _this.$http.post(url, parm);
+          if (res.code == 200) {
+            //取消全部选中
+            _this.ztreeObj.checkAllNodes(false);
+            _this.ztreeObj.cancelSelectedNode();
+            //设置添加时选中的节点
+            var node = this.ztreeObj.getNodeByParam("id", _this.leftDeptId);
+            if (node) {
+              _this.ztreeObj.selectNode(node, true);
+              _this.setting.callback.onClick(null, node.id, node);
+            }
+            //刷新表格数据
+            _this.getUserListByDeptId();
+            //关闭弹框
+            _this.dialogVisible = false;
+            _this.$message({
+              message: res.msg,
+              type: "success"
+            });
+          } else {
+            _this.$message({
+              message: res.msg,
+              type: "error"
+            });
+          }
+        }
+      });
+
+    },
     //左侧部门树创建成功之后调用
     handleCreated: function(ztreeObj) {
       this.ztreeObj = ztreeObj;
@@ -370,8 +336,9 @@ export default {
     },
     // 左侧部门树点击事件,evt
     ztreeOnClick: function(evt, treeId, treeNode) {
-      console.log(treeNode);
-      //此处根据点中部门树id查询下级部门
+      this.leftDeptId = treeNode.id
+      //此处根据点中部门树id查询用户
+      this.getUserListByDeptId();
     },
     handleSizeChange(val) {
       console.log(`每页 ${val} 条`);
@@ -394,105 +361,73 @@ export default {
     },
     //弹框中选择用户所属部门
     selectDept() {
+      this.getSelectDeptTree();
       this.parentDeptDialogVisible = true;
-      this.parentNodes = [
-        {
-          id: "0",
-          pid: "-1",
-          likeId: "0,",
-          parentName: null,
-          manager: null,
-          name: "顶级部门",
-          deptCode: null,
-          deptAddress: null,
-          deptPhone: null,
-          orderNum: null
-        },
-        {
-          id: "1000000362292826",
-          pid: "1000001251633881",
-          likeId: "0,100000177618509910000012516338811000000362292826",
-          parentName: "销售部门",
-          manager: null,
-          name: "销售1",
-          deptCode: "",
-          deptAddress: "",
-          deptPhone: "",
-          orderNum: 0
-        },
-        {
-          id: "1000001251633881",
-          pid: "1000001776185099",
-          likeId: "0,10000017761850991000001251633881",
-          parentName: "秘咖科技有限公司",
-          manager: null,
-          name: "销售部门",
-          deptCode: null,
-          deptAddress: null,
-          deptPhone: null,
-          orderNum: null
-        },
-        {
-          id: "1000001341234088",
-          pid: "1000001776185099",
-          likeId: "0,1000001776185099",
-          parentName: "秘咖网络科技有限公司",
-          manager: null,
-          name: "人才管理部1",
-          deptCode: "RCGL",
-          deptAddress: "",
-          deptPhone: "",
-          orderNum: 0
-        },
-        {
-          id: "1000001620535597",
-          pid: "1000001776185099",
-          likeId: "0,10000017761850991000001620535597",
-          parentName: "秘咖网络科技有限公司",
-          manager: null,
-          name: "软件研发部",
-          deptCode: null,
-          deptAddress: null,
-          deptPhone: null,
-          orderNum: null
-        },
-        {
-          id: "1000001776185099",
-          pid: "0",
-          likeId: "0,1000001776185099",
-          parentName: "顶级部门",
-          manager: null,
-          name: "秘咖网络科技有限公司",
-          deptCode: null,
-          deptAddress: null,
-          deptPhone: null,
-          orderNum: null
-        },
-        {
-          id: "1000002097176073",
-          pid: "1000001776185099",
-          likeId: "0,10000017761850991000002097176073",
-          parentName: "秘咖网络科技有限公司",
-          manager: "464156",
-          name: "售后服务部",
-          deptCode: "SHFWB",
-          deptAddress: "昆明",
-          deptPhone: "18687171906",
-          orderNum: null
-        }
-      ];
     },
     //删除按钮
-    deleteUser(row) {
-      console.log(row);
+    deleteDept(row) {
+      let _this = this;
+      _this.$confirm("确定删除吗 ?", "系统提示", {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        type: "warning"
+      }).then(async () => {
+        let parm = {
+          id: row.id
+        };
+        let { data: res } = await _this.$http.delete(
+          "/api/user/deleteUserById",
+          parm
+        );
+        if (res.code == 200) {
+          
+          //刷新表格数据
+          _this.getUserListByDeptId();
+          _this.$message({
+            message: res.msg,
+            type: "success"
+          });
+        } else {
+          _this.$message({
+            message: res.msg,
+            type: "error"
+          });
+        }
+      });
     },
     //编辑按钮
     editUser(row) {
-      console.log(row);
+      let _this = this;
+      _this.editTag = "1";
+      //显示弹框
+      _this.dialogVisible = true;
+      //清空表单数据
+      _this.resetForm("userForm");
+      //查询要编辑的用户信息
+      _this.getUserById(row.id);
+    },
+    //根据id查询用户信息
+    async getUserById(userId) {
+      let _this = this;
+      let parm = {
+        id: userId
+      };
+      let { data: res } = await _this.$http.post("/api/user/getUserById", parm);
+      if (res.code == 200) {
+        _this.userForm = res.data;
+        _this.leftDeptId = res.data.deptId;
+      }
     },
     addUser() {
-      this.deptDialogTitle = "新增部门";
+      //清空表单数据
+      this.resetForm("userForm");
+      this.deptDialogTitle = "新增用户";
       this.dialogVisible = true;
+    },
+    resetForm(formName) {
+      if (this.$refs[formName]) {
+        this.$refs[formName].resetFields();
+      }
     },
     //分配角色
     assignRole(row) {
@@ -507,7 +442,41 @@ export default {
     //选中角色
     selectRoleRow(row){
       console.log(row)
-    }
+    },
+    //获取左侧组织树
+    async getLeftTree() {
+      let _this = this;
+      let { data: res } = await _this.$http.post("/api/department/getLeftDeptTree");
+      if (res.code == 200) {
+        _this.nodes = res.data;
+      }
+    },
+    //根据部门id查询用户列表
+    async getUserListByDeptId() {
+      let parm = {
+        deptId: this.leftDeptId,
+        pageSize: this.pageSize,
+        currentPage: this.currentPage,
+        userName: this.searchForm.userName,
+        userPhone:this.searchForm.userPhone,
+        userEmail:this.searchForm.userEmail 
+      };
+      let { data: res } = await this.$http.post("/api/user/getUserList", parm);
+      if (res.code == 200) {
+        this.tableData = res.data.records;
+        this.currentPage = res.data.current;
+        this.total = res.data.total;
+      }
+    },
+    //获取新增弹框部门树
+    async getSelectDeptTree() {
+      let _this = this;
+      let { data: res } = await _this.$http.post("/api/department/getLeftDeptTree");
+      if (res.code == 200) {
+        _this.parentNodes = res.data;
+      }
+    },
+
   }
 };
 </script>

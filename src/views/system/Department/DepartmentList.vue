@@ -296,7 +296,6 @@ export default {
       this.ztreeObj = ztreeObj;
       if(this.addForm.pid != "") {
         firstNode = this.ztreeObj.getNodeByParam("id", this.addform.pid);
-
       } else {
       let firstNode = this.ztreeObj.getNodes()[0];
       }
