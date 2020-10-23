@@ -107,7 +107,7 @@
         <el-form-item prop="username" label="登录名">
           <el-input v-model="userForm.username"></el-input>
         </el-form-item>
-        <el-form-item prop="password" v-if="edieTag == '0'" label="密码">
+        <el-form-item prop="password" v-if="editTag == '0'" label="密码">
           <el-input v-model="userForm.password"></el-input>
         </el-form-item>
         </el-form>
@@ -146,16 +146,17 @@
       <el-table
         size="mini"
         :data="roleTableData"
+        ref="roleTable"
         style="width: 100%"
         highlight-current-row
         @current-change="selectRoleRow"
       >
         <el-table-column prop="id" label="序号"></el-table-column>
-        <el-table-column prop="roleName" label="角色名称"></el-table-column>
+        <el-table-column prop="name" label="角色名称"></el-table-column>
       </el-table>
         <span slot="footer" class="dialog-footer">
           <el-button @click="roleDialogVisible = false">取 消</el-button>
-          <el-button @click="roleDialogVisible = false" type="primary"
+          <el-button @click="confirmRoleSave" type="primary"
             >确 定</el-button
           >
         </span>
@@ -173,6 +174,7 @@ export default {
   created(){
     //加载左侧部门树
     this.getLeftTree();
+    this.getRoleListForAssign();
   },
   //计算表格高度
   mounted() {
@@ -182,6 +184,12 @@ export default {
   },
   data() {
     return {
+      //分配用户的角色id
+      roleId:"",
+      //当前分配角色的用户id
+      userId:"",
+      //当前选中的行
+      currentRow:"",
       //左侧部门树id
       leftDeptId:"",
       editTag:"0",
@@ -293,7 +301,7 @@ export default {
           let parm = _this.userForm;
           let { data: res } = await _this.$http.post(url, parm);
           if (res.code == 200) {
-            //取消全部选中
+            //先取消全部选中
             _this.ztreeObj.checkAllNodes(false);
             _this.ztreeObj.cancelSelectedNode();
             //设置添加时选中的节点
@@ -429,19 +437,59 @@ export default {
         this.$refs[formName].resetFields();
       }
     },
-    //分配角色
-    assignRole(row) {
-      console.log(row);
-      this.roleTableData =[
-        {id:'1',roleName:'超级管理员'},
-        {id:'2',roleName:'系统管理员'},
-        {id:'3',roleName:'财务管理员'}
-      ]
-      this.roleDialogVisible = true;
+    //分配角色弹框显示
+    async assignRole(row) {
+      let _this = this;
+      _this.roleId = ''; 
+      // this.roleTableData =[
+      //   {id:'1',roleName:'超级管理员'},
+      //   {id:'2',roleName:'系统管理员'},
+      //   {id:'3',roleName:'财务管理员'}
+      // ]
+      //设置分配角色用户的id
+      _this.selectUserId = row.id;
+     //加await会等到请求返回才执行下面的语句
+     await _this.getRoleIdByUserId(row.id);
+      console.log(_this.roleId)
+       _this.$nextTick(function() {
+         //先取消之前的选中行
+      _this.$refs.roleTable.setCurrentRow();
+        //查询出当前用户角色id，和角色列表比较，相等的设为选中
+        for (let i = 0; i < _this.roleTableData.length; i++) {
+          if (_this.roleId == _this.roleTableData[i].id) {
+            //设为选中
+            _this.$refs.roleTable.setCurrentRow(_this.roleTableData[i]);
+            //保存当前选中的角色数据
+            this.currentRow = _this.roleTableData[i];
+          }
+        }
+      });
+       _this.roleDialogVisible = true;
     },
+     //查询当前用户拥有的角色
+    async getRoleIdByUserId(userId) {
+      let parm = {
+        userId: userId
+      };
+      let { data: res } = await this.$http.post(
+        "/api/role/getRoleIdByUserId",
+        parm
+      );
+      if (res.code == 200 && res.data) {
+        this.roleId = res.data.roleId;
+      } else {
+        this.roleId = "";
+      }
+    },
+     //用户确定角色后取消选中行
+    // cancelCurrent() {
+    //   this.$refs.roleTable.setCurrentRow();
+    // },
+
     //选中角色
     selectRoleRow(row){
-      console.log(row)
+      //分配角色时被选中的角色id
+      this.currentRow = row;
     },
     //获取左侧组织树
     async getLeftTree() {
@@ -476,14 +524,51 @@ export default {
         _this.parentNodes = res.data;
       }
     },
+    //分配角色时查询角色列表
+    async getRoleListForAssign() {
+      let {data:res} = await this.$http.post("/api/role/getRoleListForAssign");
+        if(res.code == 200) {
+          this.roleTableData = res.data;
+        }
+      
+    },
+    //分配的角色保存
+    async confirmRoleSave(){
+      let _this = this;
+       if(!_this.currentRow.id){
+        _this.$message({
+          message:'请选择角色',
+          type:'warning'
+        })
+        return;
+      }
+      let parm =  {
+        userId: this.selectUserId,
+        roleId: this.currentRow.id
+      }
+      let { data: res } = await _this.$http.post("/api/role/assignRole", parm);
+      if (res.code == 200) {
+        _this.roleDialogVisible = false;
+        _this.$message({
+          message: res.msg,
+          type: "success"
+        });
+      } else {
+        _this.$message({
+          message: res.msg,
+          type: "error"
+        });
+      }
+       
+    }
 
   }
 };
 </script>
 
 <style lang="scss" scoped>
-// .roleClass /deep/ .el-table__body tr.current-row > td {
-//   background: #409eff !important;
-//   color: #fff;
-// }
+.el-table__body tr.current-row>td {
+  background-color: #409eff !important;
+  color: #fff;
+}
 </style>
